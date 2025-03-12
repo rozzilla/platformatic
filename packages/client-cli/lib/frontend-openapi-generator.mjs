@@ -4,9 +4,9 @@ import { capitalize, getAllResponseCodes, getResponseContentType, getResponseTyp
 import camelcase from 'camelcase'
 import { writeOperations } from '../../client-cli/lib/openapi-common.mjs'
 
-export function processFrontendOpenAPI ({ schema, name, language, fullResponse, fullRequest, logger, withCredentials, propsOptional }) {
+export function processFrontendOpenAPI ({ schema, name, language, fullResponse, fullRequest, logger, withCredentials, propsOptional, fetchFormData }) {
   return {
-    types: generateTypesFromOpenAPI({ schema, name, fullResponse, fullRequest, propsOptional }),
+    types: generateTypesFromOpenAPI({ schema, name, fullResponse, fullRequest, propsOptional, fetchFormData }),
     implementation: generateFrontendImplementationFromOpenAPI({ schema, name, language, fullResponse, fullRequest, logger, withCredentials })
   }
 }
@@ -344,7 +344,7 @@ function generateFrontendImplementationFromOpenAPI ({ schema, name, language, fu
   return writer.toString()
 }
 
-function generateTypesFromOpenAPI ({ schema, name, fullRequest, fullResponse, propsOptional }) {
+function generateTypesFromOpenAPI ({ schema, name, fullRequest, fullResponse, propsOptional, fetchFormData }) {
   const camelCaseName = capitalize(camelcase(name))
   const { paths } = schema
   const generatedOperationIds = []
@@ -381,13 +381,34 @@ function generateTypesFromOpenAPI ({ schema, name, fullRequest, fullResponse, pr
   })
   interfaces.blankLine()
 
+  if (fetchFormData) {
+    interfaces.write(`export interface FetchFormData<T extends string = string> extends FormData {
+  append(name: T, value: string | Blob): void;
+  append(name: T, blobValue: Blob, filename?: string): void;
+  delete(name: T): void;
+  get(name: T): FormDataEntryValue | null;
+  getAll(name: T): FormDataEntryValue[];
+  has(name: T): boolean;
+  set(name: T, value: string | Blob): void;
+  set(name: T, blobValue: Blob, filename?: string): void;
+  forEach(
+    callbackfn: (
+      value: FormDataEntryValue,
+      key: T,
+      parent: TypedFormData<T>,
+    ) => void,
+    thisArg?: any,
+  ): void;
+}`)
+  }
+
   writer.blankLine()
   writer.write(`export interface ${camelCaseName}`).block(() => {
     writer.writeLine('setBaseUrl(newUrl: string): void;')
     writer.writeLine('setDefaultHeaders(headers: object): void;')
     writer.writeLine('setDefaultFetchParams(fetchParams: RequestInit): void;')
     writeOperations(interfaces, writer, operations, {
-      fullRequest, fullResponse, optionalHeaders: [], schema, propsOptional
+      fullRequest, fullResponse, optionalHeaders: [], schema, propsOptional, fetchFormData
     })
   })
 

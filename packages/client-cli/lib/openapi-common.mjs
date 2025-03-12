@@ -9,7 +9,7 @@ import { responsesWriter } from './responses-writer.mjs'
 import { getType } from './get-type.mjs'
 import CodeBlockWriter from 'code-block-writer'
 
-export function writeOperations (interfacesWriter, mainWriter, operations, { fullRequest, fullResponse, optionalHeaders, schema, propsOptional }) {
+export function writeOperations (interfacesWriter, mainWriter, operations, { fullRequest, fullResponse, optionalHeaders, schema, propsOptional, fetchFormData }) {
   const originalFullResponse = fullResponse
   const originalFullRequest = fullRequest
   let currentFullResponse = originalFullResponse
@@ -85,7 +85,7 @@ export function writeOperations (interfacesWriter, mainWriter, operations, { ful
       if (parameters && parameters.length && (bodyType === 'array' || bodyType === 'plain')) {
         currentFullRequest = true
       }
-      const writeContentOutput = writeContent(bodyWriter, requestBody.content, schema, addedProps, 'req', currentFullRequest ? 'body' : null, propsOptional)
+      const writeContentOutput = writeContent(bodyWriter, requestBody.content, schema, addedProps, 'req', currentFullRequest ? 'body' : null, propsOptional, fetchFormData)
       isRequestArray = writeContentOutput.isArray
       isStructuredType = writeContentOutput.isStructuredType
     }
@@ -175,7 +175,7 @@ export function writeProperty (writer, key, value, addedProps, required = true, 
   writer.newLine()
 }
 
-export function writeContent (writer, content, spec, addedProps, methodType, wrapper, propsOptional) {
+export function writeContent (writer, content, spec, addedProps, methodType, wrapper, propsOptional, fetchFormData) {
   let isArray = false
   let isStructuredType = false
   if (content) {
@@ -190,7 +190,9 @@ export function writeContent (writer, content, spec, addedProps, methodType, wra
       }
 
       if (isFormDataContent && wrapper) {
-        writer.write(`${wrapper}: FormData;`)
+        const properties = Object.keys(body.schema.properties).join("' | '")
+        const formData = fetchFormData ? `FetchFormData<'${properties}'>` : 'FormData'
+        writer.write(`${wrapper}: ${formData};`)
         break
       }
 

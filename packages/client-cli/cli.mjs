@@ -59,7 +59,8 @@ async function writeOpenAPIClient (
   typesComment,
   logger,
   withCredentials,
-  propsOptional
+  propsOptional,
+  fetchFormData
 ) {
   await createDirectory(folder)
 
@@ -81,7 +82,8 @@ async function writeOpenAPIClient (
       language,
       logger,
       withCredentials,
-      propsOptional
+      propsOptional,
+      fetchFormData
     })
     await writeFile(join(folder, `${name}-types.d.ts`), types)
     if (generateImplementation) {
@@ -139,7 +141,8 @@ async function downloadAndWriteOpenAPI (
   urlAuthHeaders,
   typesComment,
   withCredentials,
-  propsOptional
+  propsOptional,
+  fetchFormData
 ) {
   logger.debug(`Trying to download OpenAPI schema from ${url}`)
   let requestOptions
@@ -171,7 +174,8 @@ async function downloadAndWriteOpenAPI (
         typesComment,
         logger,
         withCredentials,
-        propsOptional
+        propsOptional,
+        fetchFormData
       )
       /* c8 ignore next 3 */
     } catch (err) {
@@ -224,7 +228,8 @@ async function readFromFileAndWrite (
   language,
   typesComment,
   withCredentials,
-  propsOptional
+  propsOptional,
+  fetchFormData
 ) {
   logger.info(`Trying to read schema from file ${file}`)
   const text = await readFile(file, 'utf8')
@@ -245,7 +250,8 @@ async function readFromFileAndWrite (
       typesComment,
       logger,
       withCredentials,
-      propsOptional
+      propsOptional,
+      fetchFormData
     )
     return 'openapi'
   } catch (err) {
@@ -499,7 +505,7 @@ export async function command (argv) {
     ...options
   } = parseArgs(argv, {
     string: ['name', 'folder', 'runtime', 'optional-headers', 'language', 'type', 'url-auth-headers', 'types-comment'],
-    boolean: ['typescript', 'full-response', 'types-only', 'full-request', 'full', 'frontend', 'validate-response', 'props-optional', 'skip-config-update'],
+    boolean: ['typescript', 'full-response', 'types-only', 'full-request', 'full', 'frontend', 'validate-response', 'props-optional', 'skip-config-update', 'fetch-form-data'],
     default: {
       typescript: false,
       language: 'js'
@@ -619,6 +625,7 @@ export async function command (argv) {
     options.typesComment = options['types-comment']
     options.withCredentials = options['with-credentials']
     options.skipConfigUpdate = options['skip-config-update']
+    options.fetchFormData = options['fetch-form-data']
     await downloadAndProcess({ url, ...options, logger, runtime: options.runtime })
     logger.info(`Client generated successfully into ${options.folder}`)
     logger.info('Check out the docs to know more: https://docs.platformatic.dev/docs/service/overview')
